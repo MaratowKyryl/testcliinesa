@@ -1,4 +1,9 @@
 {
   "name": "testcliineas",
-  "displayName": "testcliineas"
+  "displayName": "testcliineas",
+  "extra": {
+    "eas": {
+      "projectId": "6fd20a64-a02b-43dc-b359-d87716cd2903"
+    }
+  }
 }
