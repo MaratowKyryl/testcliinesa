@@ -6,7 +6,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: circleci/android:api-29-node8-alpha # For Android tools, use a specific image
+      - image: ephilipdoc/circleci-android-api28-node10-jdk11 # For Android tools, use a specific image
 
     steps:
       # Checkout code
