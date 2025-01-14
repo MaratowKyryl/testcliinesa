@@ -6,8 +6,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: circleci/python:3.8  # Use Python image (could also use Node.js image)
-      - image: circleci/android:api-30  # For Android tools, use a specific image
+      - image: circleci/android:api-29-node8-alpha # For Android tools, use a specific image
 
     steps:
       # Checkout code
@@ -20,14 +19,6 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y nodejs npm
             npm install
-
-      # Install Android SDK (if needed) and other Android dependencies
-      - run:
-          name: Install Android SDK dependencies
-          command: |
-            echo y | sdkmanager --licenses
-            sdkmanager "platforms;android-30" "build-tools;30.0.3"
-
       # Build the Android APK
       - run:
           name: Build Android APK
