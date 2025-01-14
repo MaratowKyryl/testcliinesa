@@ -8,7 +8,8 @@ jobs:
     steps:
       # Checkout code
       - checkout
-
+      - run: echo "$KEYSTORE_BASE64" | base64 --decode > ./keystore.jks
+      - run: chmod 600 ./reystore.jks
       # Install Node.js, npm dependencies, and Java 17
       - run:
           name: Install Node.js, npm dependencies, and Java 17
