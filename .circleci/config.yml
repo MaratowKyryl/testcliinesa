@@ -11,4 +11,5 @@ jobs:
       - checkout
       - run: echo "$KEYSTORE_BASE64" | base64 --decode > ./my-release-key.jks
       - run: chmod 600 ./my-release-key.jks
-      - run: ./gradlew assembleRelease
+      - run: npm install
+      - run: cd android && ./gradlew assembleRelease
