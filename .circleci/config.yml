@@ -3,8 +3,9 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/android:api-30
-    executor: shell
+      - image: circleci/android:@2.4.0
+    executor:
+      name: android/android-machine
     steps:
       - checkout
       - run:
