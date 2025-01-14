@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/android:api-30  # For Android tools, use a specific image
+      - image: circleci/android:api-29  # For Android tools, use a specific image
 
     steps:
       # Checkout code
@@ -22,21 +22,13 @@ jobs:
             npm install -g npm
             npm install
             
-            # Fix missing Google Cloud SDK repository key
-            sudo apt-get update
-            sudo apt-get install -y curl gnupg
-
-            # Add the missing public key for Google Cloud SDK
-            curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-
-            # Install OpenJDK 17
             sudo apt-get update
             sudo apt-get install -y openjdk-17-jdk
 
-            # Set JAVA_HOME to OpenJDK 17
-            echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> ~/.bashrc
-            echo "export PATH=$JAVA_HOME/bin:$PATH" >> ~/.bashrc
-            source ~/.bashrc
+#            # Set JAVA_HOME to OpenJDK 17
+#            echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> ~/.bashrc
+#            echo "export PATH=$JAVA_HOME/bin:$PATH" >> ~/.bashrc
+#            source ~/.bashrc
 
       # Build the Android APK
       - run:
