@@ -8,15 +8,7 @@ jobs:
     docker:
       - image: circleci/android@2.4.0
     steps:
-      - run:
-          name: Decode Keystore
-          command: echo "$KEYSTORE_BASE64" | base64 --decode > ./my-release-key.jks
-      - run:
-          name: Set Permissions
-          command: chmod 600 ./my-release-key.jks
-      - run:
-          name: Build Release APK
-          command: ./gradlew assembleRelease
-       - store_artifacts:
-          path: /tmp/art-1
-          destination: artifact-file
+      - checkout
+      - run: echo "$KEYSTORE_BASE64" | base64 --decode > ./my-release-key.jks
+      - run: chmod 600 ./my-release-key.jks
+      - run: ./gradlew assembleRelease
