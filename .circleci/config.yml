@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: ephilipdoc/circleci-android-api28-node10-jdk11 # For Android tools, use a specific image
+      - image: getmoona/react-native-circleci:latest # For Android tools, use a specific image
 
     steps:
       # Checkout code
