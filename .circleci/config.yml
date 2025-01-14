@@ -21,6 +21,13 @@ jobs:
             nvm install node
             npm install -g npm
             npm install
+            
+            # Fix missing Google Cloud SDK repository key
+            sudo apt-get update
+            sudo apt-get install -y curl gnupg
+
+            # Add the missing public key for Google Cloud SDK
+            curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 
             # Install OpenJDK 17
             sudo apt-get update
