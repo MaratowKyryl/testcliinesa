@@ -6,7 +6,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: circleci/android@2.4.0
+      - image: circleci/android:latest
     steps:
       - checkout
       - run: echo "$KEYSTORE_BASE64" | base64 --decode > ./my-release-key.jks
