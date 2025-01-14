@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: getmoona/react-native-circleci:latest # For Android tools, use a specific image
+      - image: circleci/android:api-30 # For Android tools, use a specific image
 
     steps:
       # Checkout code
@@ -13,6 +13,9 @@ jobs:
       - run:
           name: Install Node.js and NPM dependencies
           command: |
+            curl -fsSL https://deb.nodesource.com/setup_20.x
+            apt-get install -y nodejs
+            npm install -g npm
             npm install
       # Build the Android APK
       - run:
