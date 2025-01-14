@@ -5,6 +5,8 @@ orbs:
 
 jobs:
   build:
+    docker:
+      - image: circleci/android@2.4.0
     steps:
       - run:
           name: Decode Keystore
