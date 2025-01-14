@@ -3,16 +3,17 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/android:api-30 # For Android tools, use a specific image
+      - image: circleci/android:api-30  # For Android tools, use a specific image
 
     steps:
       # Checkout code
       - checkout
 
-      # Install Node.js and npm dependencies
+      # Install Node.js, npm dependencies, and Java 17
       - run:
-          name: Install Node.js and NPM dependencies
+          name: Install Node.js, npm dependencies, and Java 17
           command: |
+            # Install Node.js
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -20,6 +21,16 @@ jobs:
             nvm install node
             npm install -g npm
             npm install
+
+            # Install OpenJDK 17
+            apt-get update
+            apt-get install -y openjdk-17-jdk
+
+            # Set JAVA_HOME to OpenJDK 17
+            echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> ~/.bashrc
+            echo "export PATH=$JAVA_HOME/bin:$PATH" >> ~/.bashrc
+            source ~/.bashrc
+
       # Build the Android APK
       - run:
           name: Build Android APK
