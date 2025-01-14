@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/android:api-28-node  # For Android tools, use a specific image
+      - image: cimg/android::2025.01.1-node    # For Android tools, use a specific image
 
     steps:
       # Checkout code
