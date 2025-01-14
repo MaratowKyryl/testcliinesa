@@ -13,8 +13,8 @@ jobs:
       - run:
           name: Install Node.js and NPM dependencies
           command: |
-            curl -fsSL https://deb.nodesource.com/setup_20.x
-            apt-get install -y nodejs
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+            nvm install node
             npm install -g npm
             npm install
       # Build the Android APK
