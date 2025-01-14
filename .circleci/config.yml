@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  android: circleci/android@2.4.0  # Optional for Android-specific commands
-
 jobs:
   build:
     docker:
