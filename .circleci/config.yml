@@ -6,7 +6,6 @@ orbs:
 jobs:
   build:
     steps:
-      - checkout
       - run:
           name: Decode Keystore
           command: echo "$KEYSTORE_BASE64" | base64 --decode > ./my-release-key.jks
