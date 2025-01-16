@@ -1,150 +1,45 @@
+# Azure Pipelines YAML configuration file to build a React Native Android app
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
 variables:
-  system.debug: 'false'
-  lastCommitMessage: store
-  pr.check.id: ''
-  pr.status.id: ''
-  MOBILECENTER_OUTPUT_DIRECTORY: $(Build.ArtifactStagingDirectory)/build
-  MOBILECENTER_BRANCH: main
-  MOBILECENTER_BUILD_ID: $(Build.BuildNumber)
-  MOBILECENTER_SOURCE_DIRECTORY: $(Build.Repository.LocalPath)
-  MOBILECENTER_TRIGGER: continuous
-  APPCENTER_OUTPUT_DIRECTORY: $(Build.ArtifactStagingDirectory)/build
-  APPCENTER_BRANCH: main
-  APPCENTER_BUILD_ID: $(Build.BuildNumber)
-  APPCENTER_SOURCE_DIRECTORY: $(Build.Repository.LocalPath)
-  APPCENTER_TRIGGER: continuous
-  buildScripts.toolset: '{}'
-  javaScriptRunTests: 'false'
-  MOBILECENTER_REACTNATIVE_PACKAGE: package.json
-  APPCENTER_REACTNATIVE_PACKAGE: package.json
-  moduleName: app
-  buildVariant: release
-  isRoot: 'false'
-  runTests: 'false'
-  runLint: 'false'
-  keystoreEncoded: null
-  automaticSigning: 'false'
-  buildBundle: 'false'
-  MOBILECENTER_ANDROID_MODULE: app
-  MOBILECENTER_ANDROID_VARIANT: release
-  APPCENTER_ANDROID_MODULE: app
-  APPCENTER_ANDROID_VARIANT: release
-  sonoma.tags: 'continuous,javascript,android'
-name: $(BuildID)
-resources:
-  repositories:
-    - repository: self
-      type: git
-      ref: main
-jobs:
-  - job: Phase_1
-    displayName: Build
-    timeoutInMinutes: 30
-    cancelTimeoutInMinutes: 0
-    pool:
-      name: Azure Pipelines
-      vmImage: macOS-11
-    steps:
-      - checkout: self
-        clean: true
-        submodules: recursive
-        lfs: true
-      - task: PowerShell@2
-        displayName: Install build scripts
-        continueOnError: true
-        inputs:
-          targetType: inline
-          scriptName: ''
-          script: >-
-            Set-Location -Path '$(Agent.HomeDirectory)'
+  androidSdkVersion: '30'
+  buildDir: 'android/app/build/outputs/apk'
 
-            Invoke-WebRequest -Uri
-            'https://build-assets.appcenter.ms/buildscripts/appcenter-build-assets-latest.zip'
-            -OutFile 'appcenter-build-assets-latest.zip'
+steps:
 
-            if (Test-Path ./scripts) { Remove-Item -Path ./scripts -Force
-            -Recurse }
+# Step 1: Install Node.js
+- task: UseNode@1
+  displayName: 'Use Node.js 16.x'
 
-            New-Item -ItemType directory -Path 'scripts' | Out-Null
+# Step 2: Install dependencies
+- script: |
+    npm install
+    npm install -g react-native-cli
+  displayName: 'Install dependencies'
 
-            unzip -q -d 'scripts' 'appcenter-build-assets-latest.zip'
+# Step 3: Install Android dependencies
+- script: |
+    yes | sdkmanager --licenses
+    sdkmanager "build-tools;${{ variables.androidSdkVersion }}.0.0" "platforms;android-${{ variables.androidSdkVersion }}"
+  displayName: 'Install Android SDK dependencies'
 
-            Invoke-Expression 'bash ./scripts/init.sh'
-          failOnStderr: true
-      - task: Bash@3
-        displayName: Select Node.js Version v2
-        inputs:
-          filePath: $(Agent.HomeDirectory)/scripts/select-node-version.sh
-          arguments: node20
-          failOnStderr: true
-      - task: CmdLine@1
-        displayName: yarn/npm install
-        inputs:
-          filename: sh
-          arguments: >-
-            -c "if [ -f yarn.lock ]; then { yarn install
-            --network-timeout=600000; } else npm install; fi"
-      - task: CmdLine@2
-        displayName: Run Jetify
-        inputs:
-          script: |2-
+# Step 4: Build the Android app
+- script: |
+    cd android
+    ./gradlew assembleRelease
+  displayName: 'Build Android APK'
 
-                        if [ -f node_modules/jetifier/bin/jetify ]; then
-                            node node_modules/jetifier/bin/jetify
-                        else
-                            echo "Warning: node_modules/jetifier/bin/jetify does not exist"
-                            echo "         source code will not be upgraded to AndroidX"
-                        fi
-                        
-          failOnStderr: true
-      - task: ShellScript@2
-        displayName: Tag build
-        inputs:
-          scriptPath: $(Agent.HomeDirectory)/scripts/emit-tags.sh
-          args: $(sonoma.tags)
-      - task: Gradle@1
-        displayName: Gradle Task
-        inputs:
-          wrapperScript: android/gradlew
-          tasks: 'clean :app:assembleRelease '
-          options: '-p "android"'
-          jdkArchitecture: x86
-          publishJUnitResults: false
-          sqAnalysisBreakBuildIfQualityGateFailed: false
-      - task: ShellScript@2
-        name: appcenter_android_postprocess_output
-        displayName: Android Postprocess
-        inputs:
-          scriptPath: $(Agent.HomeDirectory)/scripts/android-postprocess.sh
-          args: $(build.sourcesdirectory)/android/app/build/outputs/apk
-      - task: CopyFiles@2
-        displayName: Copy build files to staging
-        inputs:
-          SourceFolder: $(build.sourcesdirectory)/android/app/build/outputs
-          Contents: apk/**/*.apk
-          TargetFolder: $(build.artifactstagingdirectory)/build
-          OverWrite: true
-          flattenFolders: true
-      - task: CopyFiles@2
-        displayName: Copy mapping files to staging
-        inputs:
-          SourceFolder: $(build.sourcesdirectory)/android/app/build/outputs
-          Contents: mapping/**/mapping.txt
-          TargetFolder: $(build.artifactstagingdirectory)/mapping
-          OverWrite: true
-          flattenFolders: true
-      - task: PublishBuildArtifacts@1
-        displayName: Publish build
-        inputs:
-          PathtoPublish: $(build.artifactstagingdirectory)/build
-          ArtifactName: build
-      - task: PublishBuildArtifacts@1
-        displayName: Publish mapping
-        condition: >-
-          and(succeeded(),
-          startsWith(variables['appcenter_android_postprocess_output.mapping'],
-          true))
-        continueOnError: true
-        inputs:
-          PathtoPublish: $(build.artifactstagingdirectory)/mapping
-          ArtifactName: mapping
+# Step 5: Publish the APK as a pipeline artifact
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.SourcesDirectory)/${{ variables.buildDir }}'
+    artifactName: 'android-apk'
+    publishLocation: 'pipeline'
+  displayName: 'Publish APK artifact'
