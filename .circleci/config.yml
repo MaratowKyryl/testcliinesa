@@ -1,29 +1,47 @@
-version: 2.1
-
+version: '2.1'
+orbs:
+  rn: react-native-community/react-native@1.0.0
 jobs:
-  build:
-    docker:
-      - image: cimg/android:2025.01.1-node    # For Android tools, use a specific image
-
+  analyse_js:
+    executor: rn/linux_js
     steps:
-      # Checkout code
+      - attach_workspace:
+          at: .
+      - run:
+          command: npm install
+          name: Install
+  checkout_code:
+    executor: rn/linux_js
+    steps:
       - checkout
-      - run: echo "$KEYSTORE_BASE64" | base64 --decode > ./keystore.jks
-      - run: chmod 600 ./keystore.jks
-      # Install Node.js, npm dependencies, and Java 17
+      - persist_to_workspace:
+          paths: .
+          root: .
+  fastlane_release:
+    executor: rn/linux_js
+    steps:
+      - attach_workspace:
+          at: .
       - run:
-          name: Install Node.js, npm dependencies, and Java 17
-          command: |
-            npm install
-
+          command: npm install
+          name: Install
       - run:
-          name: Build Android APK
-          command: |
-            cd android
-            ./gradlew assembleRelease
-
+          command: bundle exec fastlane android release
+          name: Run Fastlane
 workflows:
-  version: 2
-  build:
+  test:
     jobs:
-      - build
+      - checkout_code
+      - analyse_js:
+          requires:
+            - checkout_code
+      - rn/android_build:
+          build_type: release
+          requires:
+            - analyse_js
+      - rn/android_test:
+          requires:
+            - rn/android_build
+      - fastlane_release:
+          requires:
+            - rn/android_test
