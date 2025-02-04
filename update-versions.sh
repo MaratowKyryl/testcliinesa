@@ -1,62 +1,40 @@
-#PREDIF
-ROUTE_TO_ANDROID_VERSIONS_FILE=android/app/build.gradle;
-ROUTE_TO_IOS_VERSIONS_FILE=ios/Shkolo.xcodeproj/project.pbxproj;
+#!/bin/bash
 
-#IOS UPDATE VERSIONS
-PROJECT_VERSION=$(grep -m 1 "CURRENT_PROJECT_VERSION = [[:digit:]]*" $ROUTE_TO_IOS_VERSIONS_FILE);
-PROJECT_VERSION=$(grep -Eo '[0-9]{1,100}' <<< $PROJECT_VERSION);
-PROJECT_VERSION=$((PROJECT_VERSION+1));
-PROJECT_VERSION="CURRENT_PROJECT_VERSION = $PROJECT_VERSION";
+# Get latest Git tag
+LATEST_TAG=$(git describe --tags --abbrev=0)
+USER_VERSION=$(echo "$LATEST_TAG" | cut -d'-' -f1)  # Extract user version (1.0.1)
+CODE_VERSION=$(echo "$LATEST_TAG" | cut -d'-' -f2)  # Extract code version (403)
 
-MARKETING_VERSION=$(grep -m 1 "MARKETING_VERSION = [[:digit:]]*.[[:digit:]]*.[[:digit:]]*" $ROUTE_TO_IOS_VERSIONS_FILE);
-MARKETING_VERSION=$(grep -Eo "[0-9]{1,100}.[0-9]{1,100}.[0-9]{1,100}" <<< $MARKETING_VERSION);
+# Increment the code version
+CODE_VERSION=$((CODE_VERSION + 1))
 
-IOS_FIRST_NUMBER=$(grep -Eo '^[[:digit:]]{1,100}' <<< $MARKETING_VERSION);
-IOS_FIRST_NUMBER=$(grep -Eo '[[:digit:]]{1,100}' <<< $IOS_FIRST_NUMBER);
+# Parse user version components
+IFS='.' read -r MAJOR MINOR PATCH <<< "$USER_VERSION"
 
-IOS_MIDDLE_NUMBER=$(grep -Eo '.[[:digit:]]{1,100}.' <<< $MARKETING_VERSION);
-IOS_MIDDLE_NUMBER=$(grep -Eo '[[:digit:]]{1,100}' <<< $IOS_MIDDLE_NUMBER);
+# Increment patch number
+PATCH=$((PATCH + 1))
 
-IOS_LAST_NUMBER=$(grep -Eo '[0-9]+$' <<< $MARKETING_VERSION);
-IOS_LAST_NUMBER=$((IOS_LAST_NUMBER+1));
-
-
-if [[ $IOS_LAST_NUMBER == 10 ]]; then
-IOS_LAST_NUMBER=0;
-IOS_MIDDLE_NUMBER=$((IOS_MIDDLE_NUMBER+1));
+# If patch reaches 10, reset to 0 and increment minor version
+if [[ "$PATCH" -eq 10 ]]; then
+  PATCH=0
+  MINOR=$((MINOR + 1))
 fi
 
-MARKETING_VERSION="MARKETING_VERSION = $IOS_FIRST_NUMBER.$IOS_MIDDLE_NUMBER.$IOS_LAST_NUMBER;";
+NEW_USER_VERSION="$MAJOR.$MINOR.$PATCH"
+NEW_CODE_VERSION=$CODE_VERSION
 
-#ANDROID UPDATE VERSIONS
-VERSION_CODE=$(grep "versionCode [[:digit:]]*$" $ROUTE_TO_ANDROID_VERSIONS_FILE);
-VERSION_CODE=$(grep -Eo '[0-9]{1,100}' <<< $VERSION_CODE);
-VERSION_CODE=$((VERSION_CODE+1));
-VERSION_CODE="versionCode $VERSION_CODE";
+# Paths to project files
+ROUTE_TO_ANDROID_VERSIONS_FILE="android/app/build.gradle"
+ROUTE_TO_IOS_VERSIONS_FILE="ios/Shkolo.xcodeproj/project.pbxproj"
 
-VERSION_NAME=$(grep "versionName \"[[:digit:]]*" $ROUTE_TO_ANDROID_VERSIONS_FILE);
-VERSION_NAME=$(grep -Eo "[0-9]{1,100}.[0-9]{1,100}.[0-9]{1,100}" <<< $VERSION_NAME);
+# Update iOS project versioning
+sed -i "s/CURRENT_PROJECT_VERSION = [[:digit:]]*/CURRENT_PROJECT_VERSION = $NEW_CODE_VERSION/g" "$ROUTE_TO_IOS_VERSIONS_FILE"
+sed -i "s/MARKETING_VERSION = [[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*/MARKETING_VERSION = $NEW_USER_VERSION/g" "$ROUTE_TO_IOS_VERSIONS_FILE"
 
-ANDROID_FIRST_NUMBER=$(grep -Eo '^[[:digit:]]{1,100}' <<< $VERSION_NAME);
-ANDROID_FIRST_NUMBER=$(grep -Eo '[[:digit:]]{1,100}' <<< $ANDROID_FIRST_NUMBER);
+# Update Android project versioning
+sed -i "s/versionCode [[:digit:]]*/versionCode $NEW_CODE_VERSION/g" "$ROUTE_TO_ANDROID_VERSIONS_FILE"
+sed -i "s/versionName \"[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\"/versionName \"$NEW_USER_VERSION\"/g" "$ROUTE_TO_ANDROID_VERSIONS_FILE"
 
-ANDROID_MIDDLE_NUMBER=$(grep -Eo '.[[:digit:]]{1,100}.' <<< $VERSION_NAME);
-ANDROID_MIDDLE_NUMBER=$(grep -Eo '[[:digit:]]{1,100}' <<< $ANDROID_MIDDLE_NUMBER);
-
-ANDROID_LAST_NUMBER=$(grep -Eo '[0-9]+$' <<< $VERSION_NAME);
-ANDROID_LAST_NUMBER=$((ANDROID_LAST_NUMBER+1));
-
-if [[ $ANDROID_LAST_NUMBER == 10 ]]; then
-ANDROID_LAST_NUMBER=0;
-ANDROID_MIDDLE_NUMBER=$((ANDROID_MIDDLE_NUMBER+1));
-fi
-
-VERSION_NAME="versionName \"$ANDROID_FIRST_NUMBER.$ANDROID_MIDDLE_NUMBER.$ANDROID_LAST_NUMBER\""
-
-#IOS SET NEW VERSIONS
-sed -i "s/CURRENT_PROJECT_VERSION = [[:digit:]]*/${PROJECT_VERSION}/g" $ROUTE_TO_IOS_VERSIONS_FILE;
-sed -i "s/MARKETING_VERSION = [[:digit:]]*.[[:digit:]]*.[[:digit:]]*;/${MARKETING_VERSION}/g" $ROUTE_TO_IOS_VERSIONS_FILE;
-
-#ANDROID SET NEW VERSIONS
-sed -i "s/versionCode [[:digit:]]*$/${VERSION_CODE}/g" $ROUTE_TO_ANDROID_VERSIONS_FILE;
-sed -i "s/versionName \"[[:digit:]]*.[[:digit:]]*.[[:digit:]]*\"/${VERSION_NAME}/g" $ROUTE_TO_ANDROID_VERSIONS_FILE;
+echo "Updated versions:"
+echo "User Version: $NEW_USER_VERSION"
+echo "Code Version: $NEW_CODE_VERSION"
